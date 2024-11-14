@@ -9,14 +9,16 @@ local aimbotEnabled = false
 
 -- GUI Setup
 gui.Parent = Players.LocalPlayer:WaitForChild("PlayerGui")
-frame.Size = UDim2.new(0.2, 0, 0.2, 0)
-frame.Position = UDim2.new(0.4, 0, 0.4, 0)
+frame.Size = UDim2.new(0, 200, 0, 100)
+frame.Position = UDim2.new(0.5, -100, 0.5, -50)
 frame.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
+frame.Draggable = true -- Cho phép Frame được kéo
 frame.Parent = gui
 
 textLabel.Size = UDim2.new(1, 0, 1, 0)
 textLabel.Text = "Modded By Taidz"
 textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+textLabel.BackgroundTransparency = 1
 textLabel.Parent = frame
 
 -- Function to toggle aimbot
@@ -30,39 +32,38 @@ local function toggleAimbot()
 end
 
 -- Aimbot Logic
-local function aimAtTarget()
-    while aimbotEnabled do
-        local target = nil
-        local closestDistance = math.huge
-        
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= Players.LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                local distance = (player.Character.Head.Position - Players.LocalPlayer.Character.Head.Position).magnitude
-                if distance < closestDistance then
-                    closestDistance = distance
-                    target = player.Character.Head
+RunService.RenderStepped:Connect(function()
+    if aimbotEnabled then
+        local player = Players.LocalPlayer
+        local character = player.Character
+        if character and character:FindFirstChild("HumanoidRootPart") then
+            local closestTarget = nil
+            local closestDistance = math.huge
+
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= player and v.Character and v.Character:FindFirstChild("Head") then
+                    local distance = (character.HumanoidRootPart.Position - v.Character.Head.Position).magnitude
+                    if distance < closestDistance then
+                        closestTarget = v.Character.Head
+                        closestDistance = distance
+                    end
                 end
             end
+            
+            if closestTarget then
+                -- Đặt góc nhìn của camera hướng về mục tiêu
+                local camera = workspace.CurrentCamera
+                camera.CFrame = CFrame.new(camera.CFrame.Position, closestTarget.Position)
+            end
         end
-        
-        if target then
-            local aimPosition = target.Position
-            -- Aim at the target (this is a placeholder for actual aiming logic)
-            -- Example: Players.LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(aimPosition)
-        end
-        
-        RunService.RenderStepped:Wait()
     end
-end
+end)
 
 -- Input Handling
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
     if not gameProcessed then
         if input.KeyCode == Enum.KeyCode.E then
             toggleAimbot()
-            if aimbotEnabled then
-                aimAtTarget()
-            end
         elseif input.KeyCode == Enum.KeyCode.C then
             aimbotEnabled = false
             textLabel.Text = "Aimbot Disabled"
@@ -74,13 +75,16 @@ end)
 local function safeExecute(func)
     local success, err = pcall(func)
     if not success then
-        warn("Error occurred: " .. tostring(err))
+        warn("Error occurred: " .. err)
     end
 end
 
 -- Main Execution
 safeExecute(function()
     while true do
-        wait(1) -- Keep the script running
+        wait(1) -- Loop to keep the text visible
+        if not aimbotEnabled then
+            textLabel.Text = "Modded By Taidz"
+        end
     end
 end)
